@@ -2,24 +2,25 @@
 
 # /etc/rc.local
 
+# Denegamos todas las peticiones entrantes
 iptables -P INPUT DROP
 iptables -P FORWARD DROP 
 
+# Aceptamos todas las peticiones de red interna. 
 iptables -A INPUT -i lo -j ACCEPT
 iptables -A INPUT -i enp0s8 -j ACCEPT 
 
-iptables -A INPUT -i enp0s3 -m conntrack  
+# Permitir las conexiones entrantes desde la red externa si las ha iniciado el router. 
+iptables -A INPUT -i enp0s3 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 
 
---ctstate ESTABLISHED,RELATED -j ACCEPT 
-
-
+# Permitir el reenvío de paquetes de la red interna a la red externa
 iptables -A FORWARD -i enp0s8 -o enp0s3 -j ACCEPT 
 
+# Reenviar paquetes a la red interna si se ha iniciado desde ahí las peticiones 
+iptables -A FORWARD -i enp0s3 -o enp0s8 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 
 
-iptables -A FORWARD -i enp0s3 -o enp0s8 -m conntrack  
-
---ctstate ESTABLISHED,RELATED -j ACCEPT 
-
+# Se define el nateo
 iptables -t nat -A POSTROUTING -o enp0s3 -j MASQUERADE 
 
+# este fichero debe de finalizar con exit 0
 exit 0
